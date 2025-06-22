@@ -242,6 +242,14 @@ for TITLE_NUM in "${TITLE_NUMS[@]}"; do
           -show_entries format=duration \
           -of default=noprint_wrappers=1:nokey=1 \
           "$VOB")"
+        
+        FIRST_TIMESTAMP_SECONDS="$(ffprobe -analyzeduration 120M \
+          -probesize 1440M \
+          -v error \
+          -select_streams ${SOURCE_TRACK_NUM} \
+          -show_entries packet=pts_time \
+          -read_intervals "%+#1" \
+          "$VOB")"
 
         mkdir -p "${TMP_DIR}/subs"
 
@@ -264,17 +272,17 @@ for TITLE_NUM in "${TITLE_NUMS[@]}"; do
           -vobsubout \
           "${TMP_DIR}/subs/${SUBTITLE_TRACK_NUM}" &> /dev/null
 
-        awk '
-          BEGIN { FS=": "; OFS=": " }
+        awk -v delay="$FIRST_TIMESTAMP_SECONDS" '
+          BEGIN { FS=": ";  OFS=": " }
 
           /^timestamp:/ {
-              split($2, t, "[,:]")
-              total_ms = ((t[1] * 3600 + t[2] * 60 + t[3]) * 1000 + t[4]) / 0.96
-              h = int(total_ms / (3600 * 1000))
-              m = int((total_ms % (3600 * 1000)) / (60 * 1000))
-              s = int((total_ms % (60 * 1000)) / 1000)
-              ms = int(total_ms % 1000)
-              $2 = sprintf("%02d:%02d:%02d:%03d, %s", h, m, s, ms, t[5])
+            split($2, t, "[,:]")
+            total_ms = ((t[1] * 3600 + t[2] * 60 + t[3] + delay) * 1000 + t[4]) / 0.96
+            h = int(total_ms / (3600 * 1000))
+            m = int((total_ms % (3600 * 1000)) / (60 * 1000))
+            s = int((total_ms % (60 * 1000)) / 1000)
+            ms = int(total_ms % 1000)
+            $2 = sprintf("%02d:%02d:%02d:%03d,%s", h, m, s, ms, t[5])
           }
 
           { print }
