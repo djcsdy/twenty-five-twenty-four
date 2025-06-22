@@ -297,7 +297,7 @@ for TITLE_NUM in "${TITLE_NUMS[@]}"; do
 
         if [ "$CONTENT" = "Normal" ]; then
           SUBTITLE_ARGS+=("-disposition:s:$SUBTITLE_TRACK_NUM")
-          SUBTITLE_ARGS+=("0")
+          SUBTITLE_ARGS+=("default")
         elif [ "$CONTENT" = "Forced" ]; then
           SUBTITLE_ARGS+=("-disposition:s:$SUBTITLE_TRACK_NUM")
           SUBTITLE_ARGS+=("forced")
@@ -308,6 +308,9 @@ for TITLE_NUM in "${TITLE_NUMS[@]}"; do
           SUBTITLE_ARGS+=("captions")
           SUBTITLE_ARGS+=("-metadata:s:s:$SUBTITLE_TRACK_NUM")
           SUBTITLE_ARGS+=("title=SDH")
+        else
+          SUBTITLE_ARGS+=("-disposition:s:$SUBTITLE_TRACK_NUM")
+          SUBTITLE_ARGS+=("0")
         fi
       fi
     done
