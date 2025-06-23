@@ -343,8 +343,7 @@ for TITLE_NUM in "${TITLE_NUMS[@]}"; do
       "${INPUT_ARGS[@]}" \
       -threads 16 \
       "${MAP_ARGS[@]}" \
-      -r 24 \
-      -filter:v "setpts=25/24*PTS" \
+      -filter:v "nnedi=weights=nnedi3_weights.bin:nsize=s8x4:nns=n128:qual=1:etype=s:pscrn=new,fps=round=zero,setpts=25/24*PTS,fps=24" \
       -c:v libx265 \
       -crf 20 \
       -preset medium \
