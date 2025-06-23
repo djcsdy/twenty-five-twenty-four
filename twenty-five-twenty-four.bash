@@ -259,6 +259,7 @@ for TITLE_NUM in "${TITLE_NUMS[@]}"; do
           -analyzeduration 120M \
           -probesize 1440M \
           -i "$VOB" \
+          -threads 16 \
           -map 0:v:0 \
           -c:v libx264 \
           -preset ultrafast \
