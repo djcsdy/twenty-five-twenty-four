@@ -249,6 +249,7 @@ for TITLE_NUM in "${TITLE_NUMS[@]}"; do
           -select_streams ${SOURCE_TRACK_NUM} \
           -show_entries packet=pts_time \
           -read_intervals "%+#1" \
+          -of default=noprint_wrappers=1:nokey=1 \
           "$VOB")"
 
         mkdir -p "${TMP_DIR}/subs"
