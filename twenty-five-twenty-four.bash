@@ -233,8 +233,12 @@ for TITLE_NUM in "${TITLE_NUMS[@]}"; do
         ID="${TRACK_META[3]}"
 
         echo "Processing subtitle track $((${SUBTITLE_TRACK_NUM}+1))/${#SUBTITLE_META[@]}"
-        
-        SOURCE_TRACK_NUM="${SUBTITLE_ID_TO_SOURCE_TRACK_NUM[$ID]}"
+
+        if [[ ! -v SUBTITLE_ID_TO_SOURCE_TRACK_NUM["$ID"] ]]; then
+          continue
+        fi
+
+        SOURCE_TRACK_NUM="${SUBTITLE_ID_TO_SOURCE_TRACK_NUM["$ID"]}"
 
         RESOLUTION="$(ffprobe -analyzeduration 7200G \
           -probesize 10G \
