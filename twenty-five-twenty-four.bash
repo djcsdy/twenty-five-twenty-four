@@ -360,9 +360,9 @@ for TITLE_NUM in "${TITLE_NUMS[@]}"; do
           print ""
           print "[CHAPTER]"
           print "TIMEBASE=1/1000"
-          printf "START=%d\n", (cumulative_length_ms / 0.96)
+          printf "START=%d\n", (cumulative_length_ms * speed_ratio)
           cumulative_length_ms += chapter_length_ms
-          printf "END=%d\n", (cumulative_length_ms / 0.96)
+          printf "END=%d\n", (cumulative_length_ms * speed_ratio)
           printf "title=Chapter %d\n", chapter_num
         }
       }
