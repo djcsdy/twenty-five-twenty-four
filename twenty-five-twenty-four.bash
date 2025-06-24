@@ -157,33 +157,37 @@ for TITLE_NUM in "${TITLE_NUMS[@]}"; do
     declare -a AUDIO_ARGS
     AUDIO_ARGS=()
 
+    AUDIO_TRACK_OUTPUT_NUM=0
     for LINE in "${AUDIO_META[@]}"; do
       if [ -n "$LINE" ]; then
         IFS="," read -ra TRACK_META <<< "$LINE"
-        OUT_TRACK_NUM="${TRACK_META[0]}"
         LANGUAGE="${TRACK_META[1]}"
         FORMAT="${TRACK_META[2]}"
         CHANNELS="${TRACK_META[3]}"
         CONTENT="${TRACK_META[4]}"
         ID="${TRACK_META[5]}"
 
-        SOURCE_TRACK_NUM="${AUDIO_ID_TO_SOURCE_TRACK_NUM[$ID]}"
+        if [[ ! -v AUDIO_ID_TO_SOURCE_TRACK_NUM["$ID"] ]]; then
+          continue
+        fi
+
+        SOURCE_TRACK_NUM="${AUDIO_ID_TO_SOURCE_TRACK_NUM["$ID"]}"
 
         MAP_ARGS+=("-map")
         MAP_ARGS+=("0:$SOURCE_TRACK_NUM")
 
-        AUDIO_ARGS+=("-filter:a:$OUT_TRACK_NUM")
+        AUDIO_ARGS+=("-filter:a:$AUDIO_TRACK_OUTPUT_NUM")
         AUDIO_ARGS+=("atempo=0.96")
 
-        AUDIO_ARGS+=("-c:a:$OUT_TRACK_NUM")
+        AUDIO_ARGS+=("-c:a:$AUDIO_TRACK_OUTPUT_NUM")
         AUDIO_ARGS+=("ac3")
 
-        AUDIO_ARGS+=("-b:a:$OUT_TRACK_NUM")
+        AUDIO_ARGS+=("-b:a:$AUDIO_TRACK_OUTPUT_NUM")
         if [ "$FORMAT" = "ac3" ]; then
           AUDIO_ARGS+=("$(ffprobe -analyzeduration 7200G \
             -probesize 10G \
             -v quiet \
-            -select_streams "a:$OUT_TRACK_NUM" \
+            -select_streams "a:$AUDIO_TRACK_OUTPUT_NUM" \
             -show_entries stream=bit_rate \
             -of json \
             "$VOB" | jq -r '.streams[0].bit_rate'
@@ -195,29 +199,31 @@ for TITLE_NUM in "${TITLE_NUMS[@]}"; do
         fi
 
         if [ -n "$LANGUAGE" ]; then
-          AUDIO_ARGS+=("-metadata:s:a:$OUT_TRACK_NUM")
+          AUDIO_ARGS+=("-metadata:s:a:$AUDIO_TRACK_OUTPUT_NUM")
           AUDIO_ARGS+=("language=$(isoquery --iso=639-2 $LANGUAGE | cut -f1)")
         fi
 
         if [ "$CONTENT" = "Comments1" ] || [ "$CONTENT" = "DirectorsComments" ]; then
-          AUDIO_ARGS+=("-metadata:s:a:$OUT_TRACK_NUM")
+          AUDIO_ARGS+=("-metadata:s:a:$AUDIO_TRACK_OUTPUT_NUM")
           AUDIO_ARGS+=("title=Director's Commentary")
         elif [ "$CONTENT" = "Comments2" ]; then
-          AUDIO_ARGS+=("-metadata:s:a:$OUT_TRACK_NUM")
+          AUDIO_ARGS+=("-metadata:s:a:$AUDIO_TRACK_OUTPUT_NUM")
           AUDIO_ARGS+=("title=Additional Commentary")
         elif [ "$CONTENT" = "VisuallyImpaired" ]; then
-          AUDIO_ARGS+=("-metadata:s:a:$OUT_TRACK_NUM")
+          AUDIO_ARGS+=("-metadata:s:a:$AUDIO_TRACK_OUTPUT_NUM")
           AUDIO_ARGS+=("title=Audio Description")
         elif [ "$CONTENT" = "AlternateGroup" ]; then
-          AUDIO_ARGS+=("-metadata:s:a:$OUT_TRACK_NUM")
+          AUDIO_ARGS+=("-metadata:s:a:$AUDIO_TRACK_OUTPUT_NUM")
           AUDIO_ARGS+=("title=Alternative Audio")
         elif [ "$CONTENT" = "Music" ]; then
-          AUDIO_ARGS+=("-metadata:s:a:$OUT_TRACK_NUM")
+          AUDIO_ARGS+=("-metadata:s:a:$AUDIO_TRACK_OUTPUT_NUM")
           AUDIO_ARGS+=("title=Music")
         elif [ "$CONTENT" = "Effects" ]; then
-          AUDIO_ARGS+=("-metadata:s:a:$OUT_TRACK_NUM")
+          AUDIO_ARGS+=("-metadata:s:a:$AUDIO_TRACK_OUTPUT_NUM")
           AUDIO_ARGS+=("title=Sound Effects")
         fi
+
+        AUDIO_TRACK_OUTPUT_NUM="$((AUDIO_TRACK_OUTPUT_NUM + 1))"
       fi
     done
 
