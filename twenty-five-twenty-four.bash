@@ -23,6 +23,7 @@ check_command "ffprobe"
 check_command "ffmpeg"
 check_command "isoquery"
 check_command "mencoder"
+check_command "jq"
 
 if [ $# -lt 2 ]; then
     echo "Usage: $0 /path/to/dvd output/path"
@@ -117,16 +118,15 @@ for TITLE_NUM in "${TITLE_NUMS[@]}"; do
 
     while read LINE; do
       if [ -n "$LINE" ]; then
-        IFS="," read -r NUM ID <<< "$LINE"
-        AUDIO_ID_TO_SOURCE_TRACK_NUM[$ID]="$NUM"
+        AUDIO_ID_TO_SOURCE_TRACK_NUM["$(jq -r '.id' <<< "$LINE")"]="$(jq -r '.index' <<< "$LINE")"
       fi
     done < <(ffprobe -analyzeduration 7200G \
       -probesize 10G \
       -v quiet \
       -show_entries stream=id,index \
       -select_streams a \
-      -of csv=p=0 \
-      "$VOB"
+      -of json \
+      "$VOB" | jq -c '.streams[]'
     )
     
     declare -A SUBTITLE_ID_TO_SOURCE_TRACK_NUM
@@ -134,16 +134,15 @@ for TITLE_NUM in "${TITLE_NUMS[@]}"; do
 
     while read LINE; do
       if [ -n "$LINE" ]; then
-        IFS="," read -r VALUE KEY <<< "$LINE"
-        SUBTITLE_ID_TO_SOURCE_TRACK_NUM[$KEY]=$VALUE
+        SUBTITLE_ID_TO_SOURCE_TRACK_NUM["$(jq -r '.id' <<< "$LINE")"]="$(jq -r '.index' <<< "$LINE")"
       fi
     done < <(ffprobe -analyzeduration 7200G \
       -probesize 10G \
       -v quiet \
       -show_entries stream=id,index \
       -select_streams s \
-      -of csv=p=0 \
-      "$VOB"
+      -of json \
+      "$VOB" | jq -c '.streams[]'
     )
     
     declare -a INPUTS
@@ -186,8 +185,8 @@ for TITLE_NUM in "${TITLE_NUMS[@]}"; do
             -v quiet \
             -select_streams "a:$OUT_TRACK_NUM" \
             -show_entries stream=bit_rate \
-            -of csv=p=0 \
-            "$VOB"
+            -of json \
+            "$VOB" | jq -r '.streams[0].bit_rate'
           )")
         elif [ $CHANNELS -gt 2 ]; then
           AUDIO_ARGS+=("448k")
@@ -242,15 +241,15 @@ for TITLE_NUM in "${TITLE_NUMS[@]}"; do
           -v error \
           -select_streams v:0 \
           -show_entries stream=width,height \
-          -of csv=s=x:p=0 \
-          "$VOB")"
+          -of json \
+          "$VOB" | jq -r '.streams[0] | "\(.width)x\(.height)"')"
 
         DURATION="$(ffprobe -analyzeduration 7200G \
           -probesize 10G \
           -v error \
           -show_entries format=duration \
-          -of default=noprint_wrappers=1:nokey=1 \
-          "$VOB")"
+          -of json \
+          "$VOB" | jq -r '.format.duration')"
         
         FIRST_TIMESTAMP_SECONDS="$(ffprobe -analyzeduration 7200G \
           -probesize 10G \
@@ -258,8 +257,8 @@ for TITLE_NUM in "${TITLE_NUMS[@]}"; do
           -select_streams ${SOURCE_TRACK_NUM} \
           -show_entries packet=pts_time \
           -read_intervals "%+#1" \
-          -of default=noprint_wrappers=1:nokey=1 \
-          "$VOB")"
+          -of json \
+          "$VOB" | jq -r '.packets[0].pts_time')"
 
         mkdir -p "${TMP_DIR}/subs"
 
