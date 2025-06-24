@@ -224,15 +224,16 @@ for TITLE_NUM in "${TITLE_NUMS[@]}"; do
     declare -a SUBTITLE_ARGS
     SUBTITLE_ARGS=()
 
+    SUBTITLE_TRACK_OUTPUT_NUM=0
     for LINE in "${SUBTITLE_META[@]}"; do
       if [ -n "$LINE" ]; then
         IFS="," read -ra TRACK_META <<< "$LINE"
-        SUBTITLE_TRACK_NUM="${TRACK_META[0]}"
+        SUBTITLE_TRACK_INPUT_NUM="${TRACK_META[0]}"
         LANGUAGE="${TRACK_META[1]}"
         CONTENT="${TRACK_META[2]}"
         ID="${TRACK_META[3]}"
 
-        echo "Processing subtitle track $((${SUBTITLE_TRACK_NUM}+1))/${#SUBTITLE_META[@]}"
+        echo "Processing subtitle track $((${SUBTITLE_TRACK_INPUT_NUM}+1))/${#SUBTITLE_META[@]}"
 
         if [[ ! -v SUBTITLE_ID_TO_SOURCE_TRACK_NUM["$ID"] ]]; then
           continue
@@ -254,7 +255,7 @@ for TITLE_NUM in "${TITLE_NUMS[@]}"; do
           -show_entries format=duration \
           -of json \
           "$VOB" | jq -r '.format.duration')"
-        
+
         FIRST_TIMESTAMP_SECONDS="$(ffprobe -analyzeduration 7200G \
           -probesize 10G \
           -v error \
@@ -277,14 +278,14 @@ for TITLE_NUM in "${TITLE_NUMS[@]}"; do
           -preset ultrafast \
           -map "1:${SOURCE_TRACK_NUM}" \
           -c:s copy \
-          "${TMP_DIR}/subs/${SUBTITLE_TRACK_NUM}.mp4" &> /dev/null
+          "${TMP_DIR}/subs/${SUBTITLE_TRACK_INPUT_NUM}.mp4" &> /dev/null
 
-        mencoder "${TMP_DIR}/subs/${SUBTITLE_TRACK_NUM}.mp4" \
+        mencoder "${TMP_DIR}/subs/${SUBTITLE_TRACK_INPUT_NUM}.mp4" \
           -nosound \
           -ovc copy \
           -o /dev/null \
           -vobsubout \
-          "${TMP_DIR}/subs/${SUBTITLE_TRACK_NUM}" &> /dev/null
+          "${TMP_DIR}/subs/${SUBTITLE_TRACK_INPUT_NUM}" &> /dev/null
 
         awk -v delay="$FIRST_TIMESTAMP_SECONDS" '
           BEGIN { FS=": ";  OFS=": " }
@@ -300,40 +301,42 @@ for TITLE_NUM in "${TITLE_NUMS[@]}"; do
           }
 
           { print }
-        ' "${TMP_DIR}/subs/${SUBTITLE_TRACK_NUM}.idx" > "${TMP_DIR}/subs/${SUBTITLE_TRACK_NUM}.stretch.idx"
+        ' "${TMP_DIR}/subs/${SUBTITLE_TRACK_INPUT_NUM}.idx" > "${TMP_DIR}/subs/${SUBTITLE_TRACK_INPUT_NUM}.stretch.idx"
 
-        mv "${TMP_DIR}/subs/${SUBTITLE_TRACK_NUM}.stretch.idx" "${TMP_DIR}/subs/${SUBTITLE_TRACK_NUM}.idx"
+        mv "${TMP_DIR}/subs/${SUBTITLE_TRACK_INPUT_NUM}.stretch.idx" "${TMP_DIR}/subs/${SUBTITLE_TRACK_INPUT_NUM}.idx"
 
-        INPUTS+=("${TMP_DIR}/subs/${SUBTITLE_TRACK_NUM}.idx")
+        INPUTS+=("${TMP_DIR}/subs/${SUBTITLE_TRACK_INPUT_NUM}.idx")
 
         MAP_ARGS+=("-map")
         MAP_ARGS+=("$((${#INPUTS[@]}-1)):s:0")
 
-        SUBTITLE_ARGS+=("-c:s:$SUBTITLE_TRACK_NUM")
+        SUBTITLE_ARGS+=("-c:s:$SUBTITLE_TRACK_OUTPUT_NUM")
         SUBTITLE_ARGS+=("copy")
 
         if [ -n "$LANGUAGE" ]; then
-          SUBTITLE_ARGS+=("-metadata:s:s:$SUBTITLE_TRACK_NUM")
+          SUBTITLE_ARGS+=("-metadata:s:s:$SUBTITLE_TRACK_OUTPUT_NUM")
           SUBTITLE_ARGS+=("language=$(isoquery --iso=639-2 $LANGUAGE | cut -f1)")
         fi
 
         if [ "$CONTENT" = "Normal" ]; then
-          SUBTITLE_ARGS+=("-disposition:s:$SUBTITLE_TRACK_NUM")
+          SUBTITLE_ARGS+=("-disposition:s:$SUBTITLE_TRACK_OUTPUT_NUM")
           SUBTITLE_ARGS+=("default")
         elif [ "$CONTENT" = "Forced" ]; then
-          SUBTITLE_ARGS+=("-disposition:s:$SUBTITLE_TRACK_NUM")
+          SUBTITLE_ARGS+=("-disposition:s:$SUBTITLE_TRACK_OUTPUT_NUM")
           SUBTITLE_ARGS+=("forced")
-          SUBTITLE_ARGS+=("-metadata:s:s:$SUBTITLE_TRACK_NUM")
+          SUBTITLE_ARGS+=("-metadata:s:s:$SUBTITLE_TRACK_OUTPUT_NUM")
           SUBTITLE_ARGS+=("title=Foreign Language Only")
         elif [ "$CONTENT" = "Closed Caption" ]; then
-          SUBTITLE_ARGS+=("-disposition:s:$SUBTITLE_TRACK_NUM")
+          SUBTITLE_ARGS+=("-disposition:s:$SUBTITLE_TRACK_OUTPUT_NUM")
           SUBTITLE_ARGS+=("captions")
-          SUBTITLE_ARGS+=("-metadata:s:s:$SUBTITLE_TRACK_NUM")
+          SUBTITLE_ARGS+=("-metadata:s:s:$SUBTITLE_TRACK_OUTPUT_NUM")
           SUBTITLE_ARGS+=("title=SDH")
         else
-          SUBTITLE_ARGS+=("-disposition:s:$SUBTITLE_TRACK_NUM")
+          SUBTITLE_ARGS+=("-disposition:s:$SUBTITLE_TRACK_OUTPUT_NUM")
           SUBTITLE_ARGS+=("0")
         fi
+
+        SUBTITLE_TRACK_OUTPUT_NUM="$((SUBTITLE_TRACK_OUTPUT_NUM + 1))"
       fi
     done
 
