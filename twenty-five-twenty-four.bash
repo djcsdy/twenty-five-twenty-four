@@ -4,6 +4,12 @@ set -o nounset
 set -o errexit
 set -o pipefail
 
+cleanup() {
+    if [[ -v TMP_DIR && -d "$TMP_DIR" ]]; then
+        rm -rf "$TMP_DIR"
+    fi
+}
+
 check_command() {
     if ! which "$1" >/dev/null 2>&1; then
         echo "Error: Required command '$1' not found"
@@ -27,6 +33,9 @@ DVD_PATH="$1"
 OUTPUT_PATH="$2"
 
 TMP_DIR=$(mktemp -d)
+
+# Set trap to call cleanup function on exit
+trap cleanup EXIT
 
 readarray -t TITLE_NUMS < <(dvdbackup -i "$DVD_PATH" -I 2>/dev/null | grep -oP "^\s+Title \K\d+(?=:$)")
 
@@ -413,5 +422,3 @@ for TITLE_NUM in "${TITLE_NUMS[@]}"; do
   echo ""
   echo ""
 done
-
-rm -rf "$TMP_DIR"
