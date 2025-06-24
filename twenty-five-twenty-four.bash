@@ -325,8 +325,52 @@ for TITLE_NUM in "${TITLE_NUMS[@]}"; do
       fi
     done
 
-    MAP_ARGS+=("-map")
-    MAP_ARGS+=("0:t:0?")
+    lsdvd -c -t "$TITLE_NUM" "$DVD_PATH" 2>/dev/null | awk '
+      BEGIN {
+        print ";FFMETADATA1"
+        cumulative_length_ms = 0
+        speed_ratio = 25.0/24.0
+      }
+      /^[[:space:]]+Chapter: / {
+        split($0, fields, ",")
+
+        chapter_num=""
+        chapter_length_ms=""
+
+        for (i in fields) {
+          pos = index(fields[i], ":")
+          if (pos > 0) {
+            key = substr(fields[i], 1, pos-1)
+            value = substr(fields[i], pos+1)
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "", key)
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
+          }
+
+          if (key == "Chapter") {
+            chapter_num = value
+          } else if (key == "Length") {
+            split(value, time, ":")
+            if (length(time) == 3) {
+              chapter_length_ms=(time[1] * 3600 + time[2] * 60 + time[3]) * 1000
+            }
+          }
+        }
+
+        if (chapter_num != "" && chapter_length_ms != "") {
+          print ""
+          print "[CHAPTER]"
+          print "TIMEBASE=1/1000"
+          printf "START=%d\n", (cumulative_length_ms / 0.96)
+          cumulative_length_ms += chapter_length_ms
+          printf "END=%d\n", (cumulative_length_ms / 0.96)
+          printf "title=Chapter %d\n", chapter_num
+        }
+      }
+    ' > "$TMP_DIR/chapters.txt"
+
+    INPUTS+=("$TMP_DIR/chapters.txt")
+    MAP_ARGS+=("-map_metadata")
+    MAP_ARGS+=("$((${#INPUTS[@]}-1))")
 
     declare -a INPUT_ARGS
     INPUT_ARGS=()
@@ -352,8 +396,6 @@ for TITLE_NUM in "${TITLE_NUMS[@]}"; do
       -level:v 51 \
       "${AUDIO_ARGS[@]}" \
       "${SUBTITLE_ARGS[@]}" \
-      -filter:t "setpts=25/24*PTS" \
-      -c:t copy \
       "$TMP_DIR/encoded/$TITLE_NUM.$VOB_NUM.mp4"
 
     mkdir -p "$OUTPUT_PATH"
