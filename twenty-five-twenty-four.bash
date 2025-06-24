@@ -111,8 +111,8 @@ for TITLE_NUM in "${TITLE_NUMS[@]}"; do
         IFS="," read -r NUM ID <<< "$LINE"
         AUDIO_ID_TO_SOURCE_TRACK_NUM[$ID]="$NUM"
       fi
-    done < <(ffprobe -analyzeduration 120M \
-      -probesize 1440M \
+    done < <(ffprobe -analyzeduration 7200G \
+      -probesize 10G \
       -v quiet \
       -show_entries stream=id,index \
       -select_streams a \
@@ -128,8 +128,8 @@ for TITLE_NUM in "${TITLE_NUMS[@]}"; do
         IFS="," read -r VALUE KEY <<< "$LINE"
         SUBTITLE_ID_TO_SOURCE_TRACK_NUM[$KEY]=$VALUE
       fi
-    done < <(ffprobe -analyzeduration 120M \
-      -probesize 1440M \
+    done < <(ffprobe -analyzeduration 7200G \
+      -probesize 10G \
       -v quiet \
       -show_entries stream=id,index \
       -select_streams s \
@@ -172,8 +172,8 @@ for TITLE_NUM in "${TITLE_NUMS[@]}"; do
 
         AUDIO_ARGS+=("-b:a:$OUT_TRACK_NUM")
         if [ "$FORMAT" = "ac3" ]; then
-          AUDIO_ARGS+=("$(ffprobe -analyzeduration 120M \
-            -probesize 1440M \
+          AUDIO_ARGS+=("$(ffprobe -analyzeduration 7200G \
+            -probesize 10G \
             -v quiet \
             -select_streams "a:$OUT_TRACK_NUM" \
             -show_entries stream=bit_rate \
@@ -228,23 +228,23 @@ for TITLE_NUM in "${TITLE_NUMS[@]}"; do
         
         SOURCE_TRACK_NUM="${SUBTITLE_ID_TO_SOURCE_TRACK_NUM[$ID]}"
 
-        RESOLUTION="$(ffprobe -analyzeduration 120M \
-          -probesize 1440M \
+        RESOLUTION="$(ffprobe -analyzeduration 7200G \
+          -probesize 10G \
           -v error \
           -select_streams v:0 \
           -show_entries stream=width,height \
           -of csv=s=x:p=0 \
           "$VOB")"
 
-        DURATION="$(ffprobe -analyzeduration 120M \
-          -probesize 1440M \
+        DURATION="$(ffprobe -analyzeduration 7200G \
+          -probesize 10G \
           -v error \
           -show_entries format=duration \
           -of default=noprint_wrappers=1:nokey=1 \
           "$VOB")"
         
-        FIRST_TIMESTAMP_SECONDS="$(ffprobe -analyzeduration 120M \
-          -probesize 1440M \
+        FIRST_TIMESTAMP_SECONDS="$(ffprobe -analyzeduration 7200G \
+          -probesize 10G \
           -v error \
           -select_streams ${SOURCE_TRACK_NUM} \
           -show_entries packet=pts_time \
@@ -256,8 +256,8 @@ for TITLE_NUM in "${TITLE_NUMS[@]}"; do
 
         ffmpeg -f lavfi \
           -i "nullsrc=s=${RESOLUTION}:r=1:d=${DURATION}" \
-          -analyzeduration 120M \
-          -probesize 1440M \
+          -analyzeduration 7200G \
+          -probesize 10G \
           -i "$VOB" \
           -threads 16 \
           -map 0:v:0 \
