@@ -376,7 +376,7 @@ for TITLE_NUM in "${TITLE_NUMS[@]}"; do
     INPUT_ARGS=()
 
     for INPUT in "${INPUTS[@]}"; do
-      INPUT_ARGS+=("-analyzeduration" "120M" "-probesize" "1440M" "-i" "$INPUT")
+      INPUT_ARGS+=("-i" "$INPUT")
     done
     
     echo "Encoding Title ${TITLE_NUM}/${#TITLE_NUMS[@]}"
