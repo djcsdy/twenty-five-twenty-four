@@ -231,6 +231,21 @@ for TITLE_NUM in "${TITLE_NUMS[@]}"; do
     fi
   done
 
+  RESOLUTION="$(ffprobe -analyzeduration 7200G \
+    -probesize 10G \
+    -v error \
+    -select_streams v:0 \
+    -show_entries stream=width,height \
+    -of json \
+    "$VOB" | jq -r '.streams[0] | "\(.width)x\(.height)"')"
+
+  DURATION="$(ffprobe -analyzeduration 7200G \
+    -probesize 10G \
+    -v error \
+    -show_entries format=duration \
+    -of json \
+    "$VOB" | jq -r '.format.duration')"
+
   declare -a SUBTITLE_ARGS
   SUBTITLE_ARGS=()
 
@@ -250,21 +265,6 @@ for TITLE_NUM in "${TITLE_NUMS[@]}"; do
       fi
 
       SOURCE_TRACK_NUM="${SUBTITLE_ID_TO_SOURCE_TRACK_NUM["$ID"]}"
-
-      RESOLUTION="$(ffprobe -analyzeduration 7200G \
-        -probesize 10G \
-        -v error \
-        -select_streams v:0 \
-        -show_entries stream=width,height \
-        -of json \
-        "$VOB" | jq -r '.streams[0] | "\(.width)x\(.height)"')"
-
-      DURATION="$(ffprobe -analyzeduration 7200G \
-        -probesize 10G \
-        -v error \
-        -show_entries format=duration \
-        -of json \
-        "$VOB" | jq -r '.format.duration')"
 
       FIRST_TIMESTAMP_SECONDS="$(ffprobe -analyzeduration 7200G \
         -probesize 10G \
