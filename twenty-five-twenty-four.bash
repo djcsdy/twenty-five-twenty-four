@@ -200,7 +200,7 @@ for TITLE_NUM in "${TITLE_NUMS[@]}"; do
         AUDIO_ARGS+=("$(ffprobe -analyzeduration 7200G \
           -probesize 10G \
           -v quiet \
-          -select_streams "a:$AUDIO_TRACK_OUTPUT_NUM" \
+          -select_streams "${SOURCE_TRACK_NUM}" \
           -show_entries stream=bit_rate \
           -of json \
           "$VOB" | jq -r '.streams[0].bit_rate'
