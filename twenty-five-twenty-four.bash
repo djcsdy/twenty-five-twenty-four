@@ -177,20 +177,20 @@ for TITLE_NUM in "${TITLE_NUMS[@]}"; do
 
       SOURCE_TRACK_NUM="${AUDIO_ID_TO_SOURCE_TRACK_NUM["$ID"]}"
 
-      AUDIO_START_SECONDS="$(ffprobe -analyzeduration 7200G \
+      SAMPLE_RATE="$(ffprobe -analyzeduration 7200G \
         -probesize 10G \
         -v error \
         -select_streams "${SOURCE_TRACK_NUM}" \
-        -show_entries stream=start_time \
+        -show_entries stream=sample_rate \
         -of json \
-        "$VOB" | jq -r '.streams[0].start_time // "0"'
+        "$VOB" | jq -r '.streams[0].sample_rate'
       )"
 
       MAP_ARGS+=("-map")
       MAP_ARGS+=("0:$SOURCE_TRACK_NUM")
 
       AUDIO_ARGS+=("-filter:a:$AUDIO_TRACK_OUTPUT_NUM")
-      AUDIO_ARGS+=("asetpts=PTS-${AUDIO_START_SECONDS},atempo=24/25,asetpts=PTS+${AUDIO_START_SECONDS}*25/24/TB")
+      AUDIO_ARGS+=("asetrate=${SAMPLE_RATE}*24/25,aresample=${SAMPLE_RATE}")
 
       AUDIO_ARGS+=("-c:a:$AUDIO_TRACK_OUTPUT_NUM")
       AUDIO_ARGS+=("ac3")
