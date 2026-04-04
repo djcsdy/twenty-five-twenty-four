@@ -26,12 +26,19 @@ check_command "mencoder"
 check_command "jq"
 
 if [ $# -lt 2 ]; then
-    echo "Usage: $0 /path/to/dvd output/path"
+    echo "Usage: $0 [--timestretch] /path/to/dvd output/path"
     exit 1
 fi
 
-DVD_PATH="$1"
-OUTPUT_PATH="$2"
+if [[ "$1" == "--timestretch" ]]; then
+  TIMESTRETCH=1
+  DVD_PATH="$2"
+  OUTPUT_PATH="$3"
+else
+  TIMESTRETCH=0
+  DVD_PATH="$1"
+  OUTPUT_PATH="$2"
+fi
 
 TMP_DIR=$(mktemp -d)
 
@@ -177,6 +184,15 @@ for TITLE_NUM in "${TITLE_NUMS[@]}"; do
 
       SOURCE_TRACK_NUM="${AUDIO_ID_TO_SOURCE_TRACK_NUM["$ID"]}"
 
+      AUDIO_START_SECONDS="$(ffprobe -analyzeduration 7200G \
+        -probesize 10G \
+        -v error \
+        -select_streams "${SOURCE_TRACK_NUM}" \
+        -show_entries stream=start_time \
+        -of json \
+        "$VOB" | jq -r '.streams[0].start_time // "0"'
+      )"
+
       SAMPLE_RATE="$(ffprobe -analyzeduration 7200G \
         -probesize 10G \
         -v error \
@@ -190,7 +206,12 @@ for TITLE_NUM in "${TITLE_NUMS[@]}"; do
       MAP_ARGS+=("0:$SOURCE_TRACK_NUM")
 
       AUDIO_ARGS+=("-filter:a:$AUDIO_TRACK_OUTPUT_NUM")
-      AUDIO_ARGS+=("asetrate=${SAMPLE_RATE}*24/25,aresample=${SAMPLE_RATE}")
+
+      if [[ "$TIMESTRETCH" -eq 1 ]]; then
+        AUDIO_ARGS+=("asetpts=PTS-${AUDIO_START_SECONDS},atempo=24/25,asetpts=PTS+${AUDIO_START_SECONDS}*25/24/TB")
+      else
+        AUDIO_ARGS+=("asetrate=${SAMPLE_RATE}*24/25,aresample=${SAMPLE_RATE}")
+      fi
 
       AUDIO_ARGS+=("-c:a:$AUDIO_TRACK_OUTPUT_NUM")
       AUDIO_ARGS+=("ac3")
