@@ -282,19 +282,40 @@ for TITLE_NUM in "${TITLE_NUMS[@]}"; do
     -of json \
     "$VOB" | jq -r '.format.duration')"
 
+  declare -a ENGLISH_SUBTITLE_META
+  ENGLISH_SUBTITLE_META=()
+
+  declare -a OTHER_SUBTITLE_META
+  OTHER_SUBTITLE_META=()
+
+  for LINE in "${SUBTITLE_META[@]}"; do
+    if [ -n "$LINE" ]; then
+      IFS="," read -ra TRACK_META <<< "$LINE"
+      
+      INPUT_NUM="${TRACK_META[0]}"
+      LANGUAGE="$(isoquery --iso=639-2 "${TRACK_META[1]}" | cut -f1)"
+
+      if [ "${LANGUAGE}" == "eng" ]; then
+        ENGLISH_SUBTITLE_META+=("$LINE")
+      else
+        OTHER_SUBTITLE_META+=("$LINE")
+      fi
+    fi
+  done
+
   declare -a SUBTITLE_ARGS
   SUBTITLE_ARGS=()
 
   SUBTITLE_TRACK_OUTPUT_NUM=0
-  for LINE in "${SUBTITLE_META[@]}"; do
+  for LINE in "${ENGLISH_SUBTITLE_META[@]}" "${OTHER_SUBTITLE_META[@]}"; do
     if [ -n "$LINE" ]; then
       IFS="," read -ra TRACK_META <<< "$LINE"
       SUBTITLE_TRACK_INPUT_NUM="${TRACK_META[0]}"
-      LANGUAGE="${TRACK_META[1]}"
+      LANGUAGE="$(isoquery --iso=639-2 "${TRACK_META[1]}" | cut -f1)"
       CONTENT="${TRACK_META[2]}"
       ID="${TRACK_META[3]}"
 
-      echo "Processing subtitle track $((${SUBTITLE_TRACK_INPUT_NUM}+1))/${#SUBTITLE_META[@]}"
+    echo "Processing subtitle track $((${SUBTITLE_TRACK_OUTPUT_NUM}+1))/${#SUBTITLE_META[@]}"
 
       if [[ ! -v SUBTITLE_ID_TO_SOURCE_TRACK_NUM["$ID"] ]]; then
         continue
@@ -361,7 +382,7 @@ for TITLE_NUM in "${TITLE_NUMS[@]}"; do
 
       if [ -n "$LANGUAGE" ]; then
         SUBTITLE_ARGS+=("-metadata:s:s:$SUBTITLE_TRACK_OUTPUT_NUM")
-        SUBTITLE_ARGS+=("language=$(isoquery --iso=639-2 $LANGUAGE | cut -f1)")
+        SUBTITLE_ARGS+=("language=$LANGUAGE")
       fi
 
       if [ "$CONTENT" = "Normal" ]; then
