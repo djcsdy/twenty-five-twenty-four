@@ -240,12 +240,18 @@ for TITLE_NUM in "${TITLE_NUMS[@]}"; do
       if [ "$CONTENT" = "Comments1" ] || [ "$CONTENT" = "DirectorsComments" ]; then
         AUDIO_ARGS+=("-metadata:s:a:$AUDIO_TRACK_OUTPUT_NUM")
         AUDIO_ARGS+=("title=Director's Commentary")
+        AUDIO_ARGS+=("-disposition:s:a:$AUDIO_TRACK_OUTPUT_NUM")
+        AUDIO_ARGS+=("comment")
       elif [ "$CONTENT" = "Comments2" ]; then
         AUDIO_ARGS+=("-metadata:s:a:$AUDIO_TRACK_OUTPUT_NUM")
         AUDIO_ARGS+=("title=Additional Commentary")
+        AUDIO_ARGS+=("-disposition:s:a:$AUDIO_TRACK_OUTPUT_NUM")
+        AUDIO_ARGS+=("comment")
       elif [ "$CONTENT" = "VisuallyImpaired" ]; then
         AUDIO_ARGS+=("-metadata:s:a:$AUDIO_TRACK_OUTPUT_NUM")
         AUDIO_ARGS+=("title=Audio Description")
+        AUDIO_ARGS+=("-disposition:s:a:$AUDIO_TRACK_OUTPUT_NUM")
+        AUDIO_ARGS+=("visual_impaired")
       elif [ "$CONTENT" = "AlternateGroup" ]; then
         AUDIO_ARGS+=("-metadata:s:a:$AUDIO_TRACK_OUTPUT_NUM")
         AUDIO_ARGS+=("title=Alternative Audio")
