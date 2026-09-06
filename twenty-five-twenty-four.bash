@@ -478,11 +478,13 @@ for TITLE_NUM in "${TITLE_NUMS[@]}"; do
     -level:v 51 \
     "${AUDIO_ARGS[@]}" \
     "${SUBTITLE_ARGS[@]}" \
-    "$TMP_DIR/encoded/$TITLE_NUM.mp4"
+    "$TMP_DIR/encoded/$TITLE_NUM.mkv"
+
+  echo "Remuxing Title ${TITLE_NUM}/${#TITLE_NUMS[@]}"
 
   mkdir -p "$OUTPUT_PATH"
 
-  mv "$TMP_DIR/encoded/$TITLE_NUM.mp4" "$OUTPUT_PATH/$TITLE_NUM.mp4"
+  mkvmerge -o "$OUTPUT_PATH/$TITLE_NUM.mkv" "$TMP_DIR/encoded/$TITLE_NUM.mkv"
 
   rm "$VOB"
   rm -rf "${TMP_DIR}/subs"
