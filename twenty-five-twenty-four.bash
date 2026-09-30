@@ -208,9 +208,9 @@ for TITLE_NUM in "${TITLE_NUMS[@]}"; do
       AUDIO_ARGS+=("-filter:a:$AUDIO_TRACK_OUTPUT_NUM")
 
       if [[ "$TIMESTRETCH" -eq 1 ]]; then
-        AUDIO_ARGS+=("atempo=24/25,asetpts=PTS-STARTPTS+${AUDIO_START_SECONDS}*25/24/TB")
+        AUDIO_ARGS+=("aresample=${SAMPLE_RATE}:async=1:min_hard_comp=0.01,atempo=24/25,asetpts=PTS-STARTPTS+${AUDIO_START_SECONDS}*25/24/TB")
       else
-        AUDIO_ARGS+=("asetrate=${SAMPLE_RATE}*24/25,aresample=${SAMPLE_RATE}")
+        AUDIO_ARGS+=("aresample=${SAMPLE_RATE}:async=1:min_hard_comp=0.01,asetrate=${SAMPLE_RATE}*24/25,aresample=${SAMPLE_RATE}")
       fi
 
       AUDIO_ARGS+=("-c:a:$AUDIO_TRACK_OUTPUT_NUM")
