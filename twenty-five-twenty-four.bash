@@ -387,7 +387,7 @@ for TITLE_NUM in "${TITLE_NUMS[@]}"; do
 
       if [ "$CONTENT" = "Normal" ]; then
         SUBTITLE_ARGS+=("-disposition:s:$SUBTITLE_TRACK_OUTPUT_NUM")
-        SUBTITLE_ARGS+=("default")
+        SUBTITLE_ARGS+=("0")
       elif [ "$CONTENT" = "Forced" ]; then
         SUBTITLE_ARGS+=("-disposition:s:$SUBTITLE_TRACK_OUTPUT_NUM")
         SUBTITLE_ARGS+=("forced")
